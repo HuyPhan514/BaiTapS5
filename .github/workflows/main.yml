@@ -1,0 +1,53 @@
+# ============================================================
+# Tên của workflow - hiển thị trên tab "Actions" của GitHub
+# ============================================================
+name: Build and Push Docker Image
+
+# ============================================================
+# TRIGGER: Workflow này chạy khi nào?
+# ============================================================
+on:
+  push:
+    branches:
+      - main   # Chỉ chạy khi có code được push lên nhánh "main"
+
+# ============================================================
+# JOBS: Danh sách các công việc cần thực hiện
+# ============================================================
+jobs:
+  build-and-push:
+    name: Build Docker Image & Push to Docker Hub
+    runs-on: ubuntu-latest   # Máy ảo GitHub sẽ cấp phát để chạy
+
+    steps:
+      # ----------------------------------------------------------
+      # BƯỚC 1: Checkout - Lấy source code từ repository về máy ảo
+      # Sử dụng Action chính thức: actions/checkout@v4
+      # ----------------------------------------------------------
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # ----------------------------------------------------------
+      # BƯỚC 2: Docker Login - Đăng nhập vào Docker Hub
+      # Sử dụng Action chính thức: docker/login-action@v3
+      # Dùng GitHub Secrets để bảo mật, KHÔNG bao giờ hardcode mật khẩu
+      # ----------------------------------------------------------
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}   # Secret: tên đăng nhập Docker Hub
+          password: ${{ secrets.DOCKERHUB_TOKEN }}      # Secret: Access Token Docker Hub
+
+      # ----------------------------------------------------------
+      # BƯỚC 3: Build & Push - Đóng gói Dockerfile và đẩy lên Docker Hub
+      # Sử dụng Action chính thức: docker/build-push-action@v5
+      # Tags: đặt tên image theo chuẩn dockerhub_username/repo_name:tag
+      # ----------------------------------------------------------
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .                   # Build context là thư mục gốc (có Dockerfile)
+          push: true                   # Tự động push lên Docker Hub sau khi build xong
+          tags: |
+            phandanghuy/phantapS5:latest
+            phandanghuy/phantapS5:${{ github.sha }}
